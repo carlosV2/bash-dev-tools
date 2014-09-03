@@ -33,7 +33,12 @@ if [ -z "$BASE_PATH" ]; then
 fi
 
 GIT_TOOLS="${BASE_PATH}gittools.sh"
+SYMFONY_TOOLS="${BASE_PATH}gittools.sh"
 
-if [ "$ENABLE_GIT" = true ]; then
+if [ -n "$ENABLE_GIT" ] && [ "$ENABLE_GIT" = true ]; then
     source ${GIT_TOOLS}
+fi
+
+if [ -n "$ENABLE_SYMFONY" ] && [ "$ENABLE_SYMFONY" = true ]; then
+    source ${SYMFONY_TOOLS}
 fi

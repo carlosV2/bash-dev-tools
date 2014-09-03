@@ -17,6 +17,9 @@
    # enables the git tools
    ENABLE_GIT=true
 
+   # enables the symfony tools
+   ENABLE_SYMFONY=true
+
    # source the bash dev tools script
    source ~/.bash-dev-tools/devtools.sh
 ```

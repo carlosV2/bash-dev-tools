@@ -29,7 +29,7 @@ function cleanGitEnvironment ()
     fi
 }
 
-if [ "$ENABLE_ALIAS" = true ]; then
+if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias gclean="\$(cleanGitEnvironment)"
     alias gclone="git clone"
     alias gstatus="git status"
