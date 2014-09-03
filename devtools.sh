@@ -33,7 +33,9 @@ if [ -z "$BASE_PATH" ]; then
 fi
 
 GIT_TOOLS="${BASE_PATH}gittools.sh"
-SYMFONY_TOOLS="${BASE_PATH}gittools.sh"
+SYMFONY_TOOLS="${BASE_PATH}symfonytools.sh"
+BEHAT_TOOLS="${BASE_PATH}behattools.sh"
+PHPSPEC_TOOLS="${BASE_PATH}phpspectools.sh"
 
 if [ -n "$ENABLE_GIT" ] && [ "$ENABLE_GIT" = true ]; then
     source ${GIT_TOOLS}
@@ -41,4 +43,12 @@ fi
 
 if [ -n "$ENABLE_SYMFONY" ] && [ "$ENABLE_SYMFONY" = true ]; then
     source ${SYMFONY_TOOLS}
+fi
+
+if [ -n "$ENABLE_BEHAT" ] && [ "$ENABLE_BEHAT" = true ]; then
+    source ${BEHAT_TOOLS}
+fi
+
+if [ -n "$ENABLE_PHPSPEC" ] && [ "$ENABLE_PHPSPEC" = true ]; then
+    source ${PHPSPEC_TOOLS}
 fi

@@ -20,6 +20,12 @@
    # enables the symfony tools
    ENABLE_SYMFONY=true
 
+   # enables the symfony tools
+   ENABLE_BEHAT=true
+
+   # enables the symfony tools
+   ENABLE_PHPSPEC=true
+
    # source the bash dev tools script
    source ~/.bash-dev-tools/devtools.sh
 ```
