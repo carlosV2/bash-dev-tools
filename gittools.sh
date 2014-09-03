@@ -17,20 +17,7 @@ function gitPushChanges ()
     git push origin $(getGitBranch) --quiet
 }
 
-function cleanGitEnvironment ()
-{
-    if [ "`askQuestion 'Are you sure you want to clean your environment' 'Y'`" = true ]; then
-        git clean -dfq
-        git checkout -- .
-
-        echo -e "\033[32mEnvironment clean\033[0m"
-    else
-        echo -e "\033[31mAborted...\033[0m"
-    fi
-}
-
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
-    alias gclean="\$(cleanGitEnvironment)"
     alias gclone="git clone"
     alias gstatus="git status"
     alias gpush="git push origin \$(getGitBranch)"
@@ -47,4 +34,16 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias grebase="git rebase"
     alias greset="git reset"
     alias grm="git rm"
+
+    function gclean ()
+    {
+        if [ "`askQuestion 'Are you sure you want to clean your environment' 'Y'`" = true ]; then
+            git clean -dfq
+            git checkout -- .
+
+            echo -e "\033[32mEnvironment clean\033[0m"
+        else
+            echo -e "\033[31mAborted...\033[0m"
+        fi
+    }
 fi
