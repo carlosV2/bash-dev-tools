@@ -28,6 +28,9 @@ ENABLE_BEHAT=true
 # enables the symfony tools
 ENABLE_PHPSPEC=true
 
+# Specify the base path
+BASE_PATH="<insert your full installation path here>"
+
 # source the bash dev tools script
 source ~/.bash-dev-tools/devtools.sh
 ```
