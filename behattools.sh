@@ -43,6 +43,15 @@ function fixFormattingOnBehatFiles ()
 FORMATTING_TOOLS+=('fixFormattingOnBehatFiles')
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
+    function bh()
+    {
+        if [ $# -eq 0 ]
+        then
+            bin/behat -fprogress
+        else
+            bin/behat -fpretty "$@"
+        fi
+    }
+
     alias bhas="\$(addSnippetsIntoContext)"
-    alias bh="bin/behat"
 fi
