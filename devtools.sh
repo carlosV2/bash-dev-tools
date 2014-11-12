@@ -27,6 +27,12 @@ function askQuestion ()
     fi
 }
 
+function askMessage ()
+{
+    read -p "$1 " message
+    echo "$message"
+}
+
 if [ -z "$BASE_PATH" ]; then
     BASE_PATH="~/.bash-dev-tools/"
 fi

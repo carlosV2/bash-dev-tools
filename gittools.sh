@@ -46,4 +46,19 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
             echo -e "\033[31mAborted...\033[0m"
         fi
     }
+
+    function gtag ()
+    {
+        name=`askMessage 'Tag name:'`
+        message=`askMessage 'Tag message:'`
+
+        git tag -a "$name" -m "$message"
+        echo -e "\033[32mTag successfully created\033[0m"
+
+
+        if [ "`askQuestion 'Do you want to push it to the server' 'Y'`" = true ]; then
+            git push origin "$name" --no-verify --quiet
+            echo -e "\033[32mTag pushed to server\033[0m"
+        fi
+    }
 fi
