@@ -38,6 +38,7 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     function gclean ()
     {
         if [ "`askQuestion 'Are you sure you want to clean your environment' 'Y'`" = true ]; then
+            git reset HEAD --quiet
             git clean -dfq
             git checkout -- .
 
