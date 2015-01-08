@@ -34,6 +34,7 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias grebase="git rebase"
     alias greset="git reset"
     alias grm="git rm"
+    alias gmv="git mv"
 
     function gclean ()
     {
