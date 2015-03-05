@@ -17,5 +17,20 @@ FORMATTING_TOOLS+=('fixFormattingOnPhpSpecFiles')
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias psr="bin/phpspec run"
-    alias psd="bin/phpspec desc"
+
+    function psd ()
+    {
+        file="$1"
+        len=`expr "$file" : 'src/'`
+        if [ $len -gt 0 ]; then
+            file="${file#src/}"
+        else
+            len=`expr "$file" : 'spec/'`
+            if [ $len -gt 0 ]; then
+                file="${file#spec/}"
+            fi
+        fi
+
+        bin/phpspec desc "$file"
+    }
 fi

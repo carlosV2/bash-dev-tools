@@ -44,19 +44,19 @@ PHPSPEC_TOOLS="${BASE_PATH}phpspectools.sh"
 FORMATTING_TOOLS=()
 
 if [ -n "$ENABLE_GIT" ] && [ "$ENABLE_GIT" = true ]; then
-    source ${GIT_TOOLS}
+    source "${GIT_TOOLS}"
 fi
 
 if [ -n "$ENABLE_SYMFONY" ] && [ "$ENABLE_SYMFONY" = true ]; then
-    source ${SYMFONY_TOOLS}
+    source "${SYMFONY_TOOLS}"
 fi
 
 if [ -n "$ENABLE_BEHAT" ] && [ "$ENABLE_BEHAT" = true ]; then
-    source ${BEHAT_TOOLS}
+    source "${BEHAT_TOOLS}"
 fi
 
 if [ -n "$ENABLE_PHPSPEC" ] && [ "$ENABLE_PHPSPEC" = true ]; then
-    source ${PHPSPEC_TOOLS}
+    source "${PHPSPEC_TOOLS}"
 fi
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
