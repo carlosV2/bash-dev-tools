@@ -45,9 +45,14 @@ FORMATTING_TOOLS+=('fixFormattingOnBehatFiles')
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     function bh()
     {
-        if [ $# -eq 0 ]
-        then
+        if [ $# -eq 0 ]; then
             bin/behat -fprogress
+        elif [ $# -eq 1 ]; then
+            if [ -d "$1" ]; then
+                bin/behat -fprogress "$@"
+            else
+                bin/behat -fpretty "$@"
+            fi
         else
             bin/behat -fpretty "$@"
         fi
