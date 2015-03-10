@@ -129,6 +129,27 @@ function gitImportOne ()
     fi
 }
 
+function gitImportAll ()
+{
+    if [ -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
+        if [ -f "${GIT_PORTATION_CONTINUE_FILE}" ]; then
+            echo -e "\033[31mAn import operation has started. Run \`gimport continue\` to resume it.\033[0m"
+        else
+            commit=`tail -1 "${GIT_PORTATION_COMMITS_FILE}"`
+            echo -e "Applying: \033[33m${commit}\033[0m"
+            gitImportOne
+
+            if [ -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
+                if [ ! -f "${GIT_PORTATION_CONTINUE_FILE}" ]; then
+                    gitImportAll
+                fi
+            fi
+        fi
+    else
+        echo -e "\033[31mNot any export operation started.\033[0m"
+    fi
+}
+
 GIT_PORTATION_FOLDER="${BASE_PATH}/cache/gportation/"
 GIT_PORTATION_COMMITS_FILE="${GIT_PORTATION_FOLDER}/commits"
 GIT_PORTATION_CONTINUE_FILE="${GIT_PORTATION_FOLDER}/continue.lock"
@@ -206,7 +227,10 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
                 gitImportOne
                 ;;
             continue)
-                gitImportContinue true
+                gitImportContinue
+                ;;
+            all)
+                gitImportAll
                 ;;
             *)
                 echo -e "\033[31mPlease, select operation. Either \`one\`, \`continue\` or \`all\`.\033[0m"
