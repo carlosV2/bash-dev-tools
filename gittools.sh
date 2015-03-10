@@ -59,6 +59,9 @@ function gitExportAbort ()
             done
 
             rm -rf "${GIT_PORTATION_COMMITS_FILE}"
+            if [ -f "${GIT_PORTATION_CONTINUE_FILE}" ]; then
+                rm -rf "${GIT_PORTATION_CONTINUE_FILE}"
+            fi
 
             echo -e "\033[32mExport aborted. Please, ensure you have all the commits in place.\033[0m"
         fi
@@ -69,40 +72,58 @@ function gitExportAbort ()
 
 function gitImportContinue ()
 {
-    changes=`git status --porcelain | cut -c1-2`
-    clean=true
-    for line in ${changes}; do
-        if [ "$line" != "M" ]; then
-            clean=false
-        fi
-    done
+    if [ -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
+        numberOfChanges=`git status --porcelain | wc -l`
+        if [ $numberOfChanges -gt 0 ]; then
+            changes=`git status --porcelain | cut -c1-2`
+            clean=true
+            for line in ${changes}; do
+                if [ "$line" != "M" ]; then
+                    clean=false
+                fi
+            done
 
-    if [ ${clean} = true ]; then
-        numberOfCommits=`cat "${GIT_PORTATION_COMMITS_FILE}" | wc -l | xargs`
-        lastCommit=`tail -1 "${GIT_PORTATION_COMMITS_FILE}"`
+            if [ ${clean} = true ]; then
+                numberOfCommits=`cat "${GIT_PORTATION_COMMITS_FILE}" | wc -l | xargs`
+                lastCommit=`tail -1 "${GIT_PORTATION_COMMITS_FILE}"`
 
-        gitCreateCommit "${lastCommit}"
+                gitCreateCommit "${lastCommit}"
 
-        numberOfCommits=$((numberOfCommits - 1))
-        if [ $numberOfCommits -lt 1 ]; then
-            rm -rf "${GIT_PORTATION_COMMITS_FILE}"
+                numberOfCommits=$((numberOfCommits - 1))
+                if [ $numberOfCommits -lt 1 ]; then
+                    rm -rf "${GIT_PORTATION_COMMITS_FILE}"
+                else
+                    commits=`head -$numberOfCommits "${GIT_PORTATION_COMMITS_FILE}"`
+                    echo "$commits" > "${GIT_PORTATION_COMMITS_FILE}"
+                fi
+
+                if [ -f "${GIT_PORTATION_CONTINUE_FILE}" ]; then
+                    git stash drop --quiet
+                    rm "${GIT_PORTATION_CONTINUE_FILE}"
+                fi
+            else
+                echo -e "\033[33mSome files need your supervision. Please check the following list:\033[0m"
+                git status --porcelain
+
+                touch "${GIT_PORTATION_CONTINUE_FILE}"
+            fi
         else
-            commits=`head -$numberOfCommits "${GIT_PORTATION_COMMITS_FILE}"`
-            echo "$commits" > "${GIT_PORTATION_COMMITS_FILE}"
+            echo -e "\033[31mThere are no changes registered. Are you missing something?\033[0m"
         fi
     else
-        echo -e "\033[33mSome files need your supervision. Please check the following list:\033[0m"
-        git status --porcelain
-
-        touch "${GIT_PORTATION_CONTINUE_FILE}"
-    fi    
+        echo -e "\033[31mNot any export operation started.\033[0m"
+    fi
 }
 
 function gitImportOne ()
 {
     if [ -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
-        git stash pop --quiet
-        gitImportContinue
+        if [ -f "${GIT_PORTATION_CONTINUE_FILE}" ]; then
+            echo -e "\033[31mAn import operation has started. Run \`gimport continue\` to resume it.\033[0m"
+        else
+            git stash pop --quiet
+            gitImportContinue
+        fi
     else
         echo -e "\033[31mNot any export operation started.\033[0m"
     fi
@@ -180,6 +201,16 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
             mkdir -p "${GIT_PORTATION_FOLDER}"
         fi
 
-        gitImportOne
+        case "$1" in
+            one)
+                gitImportOne
+                ;;
+            continue)
+                gitImportContinue true
+                ;;
+            *)
+                echo -e "\033[31mPlease, select operation. Either \`one\`, \`continue\` or \`all\`.\033[0m"
+                ;;
+        esac
     }
 fi
