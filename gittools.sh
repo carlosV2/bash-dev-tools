@@ -17,6 +17,40 @@ function gitPushChanges ()
     git push origin $(getGitBranch) --quiet
 }
 
+function gitExportInit ()
+{
+    if [ ! -f "${GIT_EXPORT_COMMITS_FILE}" ]; then
+        commits=$1
+        if [ "$commits" = "" ]; then
+            commits=0
+        fi
+
+        if [ $commits -ge 1 ]; then
+            echo -e "\033[32mYou are about to export the following commits:\033[0m"
+            git log -${commits} --oneline
+            echo
+
+            if [ "`askQuestion 'Are you sure you want to export them' 'Y'`" = true ]; then
+                git log -${commits} --oneline | cut -d' ' -f2- > "${GIT_EXPORT_COMMITS_FILE}"
+
+                for i in `seq 1 ${commits}`; do
+                    echo -ne "Saving commit (${i}/${commits})        "\\r
+                    git reset HEAD~1 --quiet && git stash -u --quiet
+                done
+
+                echo -e "\033[32mCommits exported successfully!\033[0m"
+            fi
+        else
+            echo -e "\033[33mPlease, supply the number of commits you want to export.\033[0m"
+        fi
+    else
+        echo -e "\033[31mYou are already exporting some commits.\033[0m"
+    fi
+}
+
+GIT_EXPORT_FOLDER="${BASE_PATH}/cache/gexport/"
+GIT_EXPORT_COMMITS_FILE="${GIT_EXPORT_FOLDER}/commits"
+
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias gclone="git clone"
     alias gstatus="git status"
@@ -61,5 +95,14 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
             git push origin "$name" --no-verify --quiet
             echo -e "\033[32mTag pushed to server\033[0m"
         fi
+    }
+
+    function gexport ()
+    {
+        if [ ! -d "${GIT_EXPORT_FOLDER}" ]; then
+            mkdir -p "${GIT_EXPORT_FOLDER}"
+        fi
+
+        gitExportInit "$1"
     }
 fi
