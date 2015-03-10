@@ -29,10 +29,10 @@ ENABLE_BEHAT=true
 ENABLE_PHPSPEC=true
 
 # Specify the base path
-BASE_PATH="<insert your full installation path here>"
+BASE_PATH="~/.bash-dev-tools"
 
 # source the bash dev tools script
-source ~/.bash-dev-tools/devtools.sh
+source "$BASE_PATH/devtools.sh"
 ```
 
 **Enjoy!**
