@@ -78,7 +78,7 @@ function gitImportContinue ()
             changes=`git status --porcelain | cut -c1-2`
             clean=true
             for line in ${changes}; do
-                if [ "$line" != "M" ]; then
+                if [ "$line" != "M" ] && [ "$line" != "??" ] && [ "$line" != "A" ]; then
                     clean=false
                 fi
             done
