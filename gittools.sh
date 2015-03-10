@@ -48,6 +48,25 @@ function gitExportInit ()
     fi
 }
 
+function gitExportAbort ()
+{
+    if [ -f "${GIT_EXPORT_COMMITS_FILE}" ]; then
+        if [ "`askQuestion 'Are you sure you want to abort exporting' 'Y'`" = true ]; then
+            commits=`cat ${GIT_EXPORT_COMMITS_FILE} | wc -l | xargs`
+            for i in `seq 1 ${commits}`; do
+                echo -ne "Removing commit (${i}/${commits})        "\\r
+                git stash drop --quiet 2> /dev/null
+            done
+
+            rm -rf "${GIT_EXPORT_COMMITS_FILE}"
+
+            echo -e "\033[32mExport aborted. Please, ensure you have all the commits in place.\033[0m"
+        fi
+    else
+        echo -e "\033[31mNot any export operation started.\033[0m"
+    fi
+}
+
 GIT_EXPORT_FOLDER="${BASE_PATH}/cache/gexport/"
 GIT_EXPORT_COMMITS_FILE="${GIT_EXPORT_FOLDER}/commits"
 
@@ -103,6 +122,13 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
             mkdir -p "${GIT_EXPORT_FOLDER}"
         fi
 
-        gitExportInit "$1"
+        case "$1" in
+            abort)
+                gitExportAbort
+                ;;
+            *)
+                gitExportInit "$1"
+                ;;
+        esac
     }
 fi
