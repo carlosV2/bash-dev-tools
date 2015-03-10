@@ -19,7 +19,7 @@ function gitPushChanges ()
 
 function gitExportInit ()
 {
-    if [ ! -f "${GIT_EXPORT_COMMITS_FILE}" ]; then
+    if [ ! -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
         commits=$1
         if [ "$commits" = "" ]; then
             commits=0
@@ -31,7 +31,7 @@ function gitExportInit ()
             echo
 
             if [ "`askQuestion 'Are you sure you want to export them' 'Y'`" = true ]; then
-                git log -${commits} --oneline | cut -d' ' -f2- > "${GIT_EXPORT_COMMITS_FILE}"
+                git log -${commits} --oneline | cut -d' ' -f2- > "${GIT_PORTATION_COMMITS_FILE}"
 
                 for i in `seq 1 ${commits}`; do
                     echo -ne "Saving commit (${i}/${commits})        "\\r
@@ -50,15 +50,15 @@ function gitExportInit ()
 
 function gitExportAbort ()
 {
-    if [ -f "${GIT_EXPORT_COMMITS_FILE}" ]; then
+    if [ -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
         if [ "`askQuestion 'Are you sure you want to abort exporting' 'Y'`" = true ]; then
-            commits=`cat ${GIT_EXPORT_COMMITS_FILE} | wc -l | xargs`
+            commits=`cat ${GIT_PORTATION_COMMITS_FILE} | wc -l | xargs`
             for i in `seq 1 ${commits}`; do
                 echo -ne "Removing commit (${i}/${commits})        "\\r
                 git stash drop --quiet 2> /dev/null
             done
 
-            rm -rf "${GIT_EXPORT_COMMITS_FILE}"
+            rm -rf "${GIT_PORTATION_COMMITS_FILE}"
 
             echo -e "\033[32mExport aborted. Please, ensure you have all the commits in place.\033[0m"
         fi
@@ -67,8 +67,50 @@ function gitExportAbort ()
     fi
 }
 
-GIT_EXPORT_FOLDER="${BASE_PATH}/cache/gexport/"
-GIT_EXPORT_COMMITS_FILE="${GIT_EXPORT_FOLDER}/commits"
+function gitImportContinue ()
+{
+    changes=`git status --porcelain | cut -c1-2`
+    clean=true
+    for line in ${changes}; do
+        if [ "$line" != "M" ]; then
+            clean=false
+        fi
+    done
+
+    if [ ${clean} = true ]; then
+        numberOfCommits=`cat "${GIT_PORTATION_COMMITS_FILE}" | wc -l | xargs`
+        lastCommit=`tail -1 "${GIT_PORTATION_COMMITS_FILE}"`
+
+        gitCreateCommit "${lastCommit}"
+
+        numberOfCommits=$((numberOfCommits - 1))
+        if [ $numberOfCommits -lt 1 ]; then
+            rm -rf "${GIT_PORTATION_COMMITS_FILE}"
+        else
+            commits=`head -$numberOfCommits "${GIT_PORTATION_COMMITS_FILE}"`
+            echo "$commits" > "${GIT_PORTATION_COMMITS_FILE}"
+        fi
+    else
+        echo -e "\033[33mSome files need your supervision. Please check the following list:\033[0m"
+        git status --porcelain
+
+        touch "${GIT_PORTATION_CONTINUE_FILE}"
+    fi    
+}
+
+function gitImportOne ()
+{
+    if [ -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
+        git stash pop --quiet
+        gitImportContinue
+    else
+        echo -e "\033[31mNot any export operation started.\033[0m"
+    fi
+}
+
+GIT_PORTATION_FOLDER="${BASE_PATH}/cache/gportation/"
+GIT_PORTATION_COMMITS_FILE="${GIT_PORTATION_FOLDER}/commits"
+GIT_PORTATION_CONTINUE_FILE="${GIT_PORTATION_FOLDER}/continue.lock"
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias gclone="git clone"
@@ -118,8 +160,8 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
 
     function gexport ()
     {
-        if [ ! -d "${GIT_EXPORT_FOLDER}" ]; then
-            mkdir -p "${GIT_EXPORT_FOLDER}"
+        if [ ! -d "${GIT_PORTATION_FOLDER}" ]; then
+            mkdir -p "${GIT_PORTATION_FOLDER}"
         fi
 
         case "$1" in
@@ -130,5 +172,14 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
                 gitExportInit "$1"
                 ;;
         esac
+    }
+
+    function gimport ()
+    {
+        if [ ! -d "${GIT_PORTATION_FOLDER}" ]; then
+            mkdir -p "${GIT_PORTATION_FOLDER}"
+        fi
+
+        gitImportOne
     }
 fi
