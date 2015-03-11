@@ -121,7 +121,10 @@ function gitImportOne ()
         if [ -f "${GIT_PORTATION_CONTINUE_FILE}" ]; then
             echo -e "\033[31mAn import operation has started. Run \`gimport continue\` to resume it.\033[0m"
         else
-            git stash pop --quiet
+            commit=`tail -1 "${GIT_PORTATION_COMMITS_FILE}"`
+            echo -e "Applying: \033[33m${commit}\033[0m"
+
+            git stash pop --quiet > /dev/null
             gitImportContinue
         fi
     else
@@ -135,8 +138,6 @@ function gitImportAll ()
         if [ -f "${GIT_PORTATION_CONTINUE_FILE}" ]; then
             echo -e "\033[31mAn import operation has started. Run \`gimport continue\` to resume it.\033[0m"
         else
-            commit=`tail -1 "${GIT_PORTATION_COMMITS_FILE}"`
-            echo -e "Applying: \033[33m${commit}\033[0m"
             gitImportOne
 
             if [ -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
