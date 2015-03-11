@@ -29,13 +29,13 @@ function addSnippetsIntoContext ()
 
 function fixFormattingOnBehatFiles ()
 {
-    echo -n "Fixing FEATURE files... "
+    echo -ne "Fixing FEATURE files... \033[36mcleaning\033[0m"\\r
     bin/php-cs-fixer fix features --quiet
     if [ $? -eq 0 ]; then
-        echo -e "\033[32mclean\033[0m"
+        echo -e "Fixing FEATURE files... \033[32mclean   \033[0m"
         return 0
     else
-        echo -e "\033[33mfixed\033[0m"
+        echo -e "Fixing FEATURE files... \033[33mfixed   \033[0m"
         return 1
     fi
 }
