@@ -99,7 +99,13 @@ function gitImportContinue ()
 
                 if [ -f "${GIT_PORTATION_CONTINUE_FILE}" ]; then
                     git stash drop --quiet
+
+                    continueFileContent=`cat "${GIT_PORTATION_CONTINUE_FILE}"`
                     rm "${GIT_PORTATION_CONTINUE_FILE}"
+
+                    if [ "${continueFileContent}" = "all" ]; then
+                        gitImportAll
+                    fi
                 fi
             else
                 echo -e "\033[33mSome files need your supervision. Please check the following list:\033[0m"
@@ -143,6 +149,8 @@ function gitImportAll ()
             if [ -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
                 if [ ! -f "${GIT_PORTATION_CONTINUE_FILE}" ]; then
                     gitImportAll
+                else
+                    echo "all" > "${GIT_PORTATION_CONTINUE_FILE}"
                 fi
             fi
         fi
