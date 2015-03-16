@@ -13,10 +13,27 @@ function fixFormattingOnPhpSpecFiles ()
     fi
 }
 
+function getLastEditedSpecFile ()
+{
+    environment=`uname -s`
+    if [ "${environment}" = "Darwin" ]; then
+        echo $(find spec -type f -print0 | xargs -0 stat -f "%m %N" | sort -rn | head -1 | cut -f2- -d" ")
+    else
+        echo $(find spec -type f -printf '%T@ %p\n' | sort -rn | head -1 | cut -f2- -d" ")
+    fi
+}
+
 FORMATTING_TOOLS+=('fixFormattingOnPhpSpecFiles')
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias psr="bin/phpspec run"
+
+    function psl ()
+    {
+        lastEdited=$(getLastEditedSpecFile)
+        echo -e "Running phpspec for: \033[36m${lastEdited}\033[0m"
+        bin/phpspec run "${lastEdited}"
+    }
 
     function psd ()
     {
