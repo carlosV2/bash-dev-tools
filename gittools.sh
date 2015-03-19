@@ -114,7 +114,16 @@ function gitImportContinue ()
                 touch "${GIT_PORTATION_CONTINUE_FILE}"
             fi
         else
-            echo -e "\033[31mThere are no changes registered. Are you missing something?\033[0m"
+            echo -e "\033[36mThere are no changes registered. This commit will be skipped.\033[0m"
+
+            numberOfCommits=`cat "${GIT_PORTATION_COMMITS_FILE}" | wc -l | xargs`
+            numberOfCommits=$((numberOfCommits - 1))
+            if [ $numberOfCommits -lt 1 ]; then
+                rm -rf "${GIT_PORTATION_COMMITS_FILE}"
+            else
+                commits=`head -$numberOfCommits "${GIT_PORTATION_COMMITS_FILE}"`
+                echo "$commits" > "${GIT_PORTATION_COMMITS_FILE}"
+            fi
         fi
     else
         echo -e "\033[31mNot any export operation started.\033[0m"
