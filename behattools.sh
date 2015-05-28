@@ -40,6 +40,33 @@ function fixFormattingOnBehatFiles ()
     fi
 }
 
+function removeWipTagsFromFile ()
+{
+    file="$1"
+    result=`cat "$file" | grep "@wip"`
+    if [ "$result" != "" ]; then
+        content=`cat "$file" | sed s/\ \@wip//g`
+        echo "$content" > "$file"
+
+        echo -e "Removed @WIP from \033[33m$file\033[0m"
+    fi
+}
+
+function recursivelyRemoveWipTags ()
+{
+    folder="$1"
+    for file in "$folder"/*; do
+        if [ -d "$file" ]; then
+            recursivelyRemoveWipTags "$file"
+        else
+            len=`expr "$file" : '.*\.feature$'`
+            if [ $len -gt 0 ]; then
+                removeWipTagsFromFile "$file"
+            fi
+        fi
+    done
+}
+
 FORMATTING_TOOLS+=('fixFormattingOnBehatFiles')
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
@@ -59,4 +86,9 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     }
 
     alias bhas="\$(addSnippetsIntoContext)"
+
+    function rmwip ()
+    {
+        recursivelyRemoveWipTags "features"
+    }
 fi
