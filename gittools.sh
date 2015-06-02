@@ -17,6 +17,11 @@ function gitPushChanges ()
     git push origin $(getGitBranch) --quiet
 }
 
+function getGitProjectFolder ()
+{
+    git rev-parse --show-toplevel
+}
+
 function gitExportInit ()
 {
     if [ ! -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
@@ -175,8 +180,6 @@ GIT_PORTATION_CONTINUE_FILE="${GIT_PORTATION_FOLDER}/continue.lock"
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias gclone="git clone"
     alias gstatus="git status"
-    alias gpush="git push origin \$(getGitBranch)"
-    alias gpull="git pull origin \$(getGitBranch)"
     alias gadd="git add"
     alias gcommit="git commit"
     alias gco="git checkout"
@@ -190,6 +193,36 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias greset="git reset"
     alias grm="git rm"
     alias gmv="git mv"
+
+    function gpush ()
+    {
+        folder=`getGitProjectFolder`
+        rebaseMergeTest="$folder/.git/rebase-merge"
+        rebaseApplyTest="$folder/.git/rebase-apply"
+
+        test -d "$rebaseMergeTest" -o -d "$rebaseApplyTest"
+        if [ $? -ne 0 ]; then
+            branch=`getGitBranch`
+            git push origin "$branch" "$@"
+        else
+            echo -e "\033[31mYou cannot PUSH commits while rebasing\033[0m"
+        fi
+    }
+
+    function gpull ()
+    {
+        folder=`getGitProjectFolder`
+        rebaseMergeTest="$folder/.git/rebase-merge"
+        rebaseApplyTest="$folder/.git/rebase-apply"
+
+        test -d "$rebaseMergeTest" -o -d "$rebaseApplyTest"
+        if [ $? -ne 0 ]; then
+            branch=`getGitBranch`
+            git pull origin "$branch" "$@"
+        else
+            echo -e "\033[31mYou cannot PULL commits while rebasing\033[0m"
+        fi
+    }
 
     function gclean ()
     {
