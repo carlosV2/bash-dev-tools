@@ -13,26 +13,29 @@ git clone https://github.com/carlosV2/bash-dev-tools.git .bash-dev-tools
 
 # bash dev tools configurations
 
-# enables the alias
+# Enables the alias
 ENABLE_ALIAS=true
 
-# enables the git tools
+# Enables the git tools
 ENABLE_GIT=true
 
-# enables the symfony tools
+# Enables the symfony tools
 ENABLE_SYMFONY=true
 
-# enables the symfony tools
+# Enables the symfony tools
 ENABLE_BEHAT=true
 
-# enables the symfony tools
+# Enables the symfony tools
 ENABLE_PHPSPEC=true
+
+# Enables the vagrant tools
+ENABLE_VAGRANT=true
 
 # Specify the base path
 # For example: /home/<user>/.bash-dev-tools/
 BASE_PATH="<insert your full installation path here>"
 
-# source the bash dev tools script
+# Source the bash dev tools script
 source "${BASE_PATH}devtools.sh"
 ```
 

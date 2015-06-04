@@ -41,6 +41,7 @@ GIT_TOOLS="${BASE_PATH}gittools.sh"
 SYMFONY_TOOLS="${BASE_PATH}symfonytools.sh"
 BEHAT_TOOLS="${BASE_PATH}behattools.sh"
 PHPSPEC_TOOLS="${BASE_PATH}phpspectools.sh"
+VAGRANT_TOOLS="${BASE_PATH}vagrant.sh"
 FORMATTING_TOOLS=()
 
 if [ -n "$ENABLE_GIT" ] && [ "$ENABLE_GIT" = true ]; then
@@ -57,6 +58,10 @@ fi
 
 if [ -n "$ENABLE_PHPSPEC" ] && [ "$ENABLE_PHPSPEC" = true ]; then
     source "${PHPSPEC_TOOLS}"
+fi
+
+if [ -n "$ENABLE_VAGRANT" ] && [ "$ENABLE_VAGRANT" = true ]; then
+    source "${VAGRANT_TOOLS}"
 fi
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
