@@ -2,10 +2,10 @@
 
 function getFileChecksum ()
 {
-    md5=`md5 $1 2> /dev/null`
+    sha=`shasum $1 2> /dev/null`
     if [ $? -eq 0 ]; then
-        prefix="MD5 ($1) = "
-        echo "${md5#$prefix}"
+        prefix=" $1"
+        echo "${sha%$prefix}"
     else
         echo ""
     fi
