@@ -364,4 +364,14 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
                 ;;
         esac
     }
+
+    function gitOverrideSafeFiles ()
+    {
+        if [ "`askQuestion 'Are you sure you want to override the safe files' 'N'`" = true ]; then
+            runSafeFilesCopyProcess "${GIT_BEFORE_SAFE_FOLDER}"
+            echo -e "\033[32mFiles overridden\033[0m"
+        else
+            echo -e "\033[31mAborted...\033[0m"
+        fi
+    }
 fi
