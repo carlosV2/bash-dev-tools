@@ -1,30 +1,97 @@
 #!/bin/sh
 
+function getMd5 ()
+{
+    md5=`md5 $1 2> /dev/null`
+    if [ $? -eq 0 ]; then
+        prefix="MD5 ($1) = "
+        echo "${md5#$prefix}"
+    else
+        echo ""
+    fi
+}
+
+function ensureSafeFilesAreTheSame ()
+{
+    folder="$1"
+    for file in `find "${folder}" -type f`; do
+        projectFile="${file#${folder}}"
+
+        projectFileMd5=`getMd5 $projectFile`
+        safeFileMd5=`getMd5 $file`
+
+        if [ "$projectFileMd5" = "" ] || [ "$safeFileMd5" = "" ] || [ "$projectFileMd5" != "$safeFileMd5" ]; then
+            return 1
+        fi
+    done
+
+    return 0
+}
+
+function runSafeFilesRemoveProcess ()
+{
+    folder="$1"
+    ensureSafeFilesAreTheSame "${folder}"
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+
+    for file in `find "${folder}" -type f`; do
+        rm "${file#${folder}}"
+    done
+
+    return 0
+}
+
+function runSafeFilesCopyProcess ()
+{
+    folder="$1"
+    for file in `find "${folder}" -type f`; do
+        cp "$file" "${file#${folder}}"
+    done
+}
+
 function gitCmd ()
 {
+    runSafeFilesRemoveProcess "${GIT_BEFORE_SAFE_FOLDER}"
+    if [ $? -ne 0 ]; then
+        echo -e "\033[31mSafe files are not in the status they should.\033[0m"
+        return 1
+    fi
+    runSafeFilesCopyProcess "${GIT_AFTER_SAFE_FOLDER}"
+    
     git "$@"
+
+    runSafeFilesRemoveProcess "${GIT_AFTER_SAFE_FOLDER}"
+    if [ $? -ne 0 ]; then
+        echo -e "\033[31mAfter executing GIT the safe files are not in the status they should. Please, review the project status!\033[0m"
+        return 1
+    fi
+    runSafeFilesCopyProcess "${GIT_BEFORE_SAFE_FOLDER}"
+
+    return 0
 }
 
 function getGitBranch ()
 {
-    GIT_SYM=`git symbolic-ref HEAD`
+    GIT_SYM=`gitCmd symbolic-ref HEAD`
     echo "${GIT_SYM##refs/heads/}"
 }
 
 function gitCreateCommit ()
 {
-    git add --all
-    git commit -m "$1" --quiet
+    gitCmd add --all
+    gitCmd commit -m "$1" --quiet
 }
 
 function gitPushChanges ()
 {
-    git push origin $(getGitBranch) --quiet
+    gitCmd push origin $(getGitBranch) --quiet
 }
 
 function getGitProjectFolder ()
 {
-    git rev-parse --show-toplevel
+    gitCmd rev-parse --show-toplevel
 }
 
 function gitExportInit ()
@@ -37,15 +104,15 @@ function gitExportInit ()
 
         if [ $commits -ge 1 ]; then
             echo -e "\033[32mYou are about to export the following commits:\033[0m"
-            git log -${commits} --oneline
+            gitCmd log -${commits} --oneline
             echo
 
             if [ "`askQuestion 'Are you sure you want to export them' 'Y'`" = true ]; then
-                git log -${commits} --oneline | cut -d' ' -f2- > "${GIT_PORTATION_COMMITS_FILE}"
+                gitCmd log -${commits} --oneline | cut -d' ' -f2- > "${GIT_PORTATION_COMMITS_FILE}"
 
                 for i in `seq 1 ${commits}`; do
                     echo -ne "Saving commit (${i}/${commits})        "\\r
-                    git reset HEAD~1 --quiet && git stash -u --quiet
+                    gitCmd reset HEAD~1 --quiet && gitCmd stash -u --quiet
                 done
 
                 echo -e "\033[32mCommits exported successfully!\033[0m"
@@ -65,7 +132,7 @@ function gitExportAbort ()
             commits=`cat ${GIT_PORTATION_COMMITS_FILE} | wc -l | xargs`
             for i in `seq 1 ${commits}`; do
                 echo -ne "Removing commit (${i}/${commits})        "\\r
-                git stash drop --quiet 2> /dev/null
+                gitCmd stash drop --quiet 2> /dev/null
             done
 
             rm -rf "${GIT_PORTATION_COMMITS_FILE}"
@@ -83,9 +150,9 @@ function gitExportAbort ()
 function gitImportContinue ()
 {
     if [ -f "${GIT_PORTATION_COMMITS_FILE}" ]; then
-        numberOfChanges=`git status --porcelain | wc -l`
+        numberOfChanges=`gitCmd status --porcelain | wc -l`
         if [ $numberOfChanges -gt 0 ]; then
-            changes=`git status --porcelain | cut -c1-2`
+            changes=`gitCmd status --porcelain | cut -c1-2`
             clean=true
             for line in ${changes}; do
                 if [ "$line" != "M" ] && [ "$line" != "??" ] && [ "$line" != "A" ] && [ "$line" != "R" ]; then
@@ -108,7 +175,7 @@ function gitImportContinue ()
                 fi
 
                 if [ -f "${GIT_PORTATION_CONTINUE_FILE}" ]; then
-                    git stash drop --quiet
+                    gitCmd stash drop --quiet
 
                     continueFileContent=`cat "${GIT_PORTATION_CONTINUE_FILE}"`
                     rm "${GIT_PORTATION_CONTINUE_FILE}"
@@ -119,7 +186,7 @@ function gitImportContinue ()
                 fi
             else
                 echo -e "\033[33mSome files need your supervision. Please check the following list:\033[0m"
-                git status --porcelain
+                gitCmd status --porcelain
 
                 touch "${GIT_PORTATION_CONTINUE_FILE}"
             fi
@@ -149,7 +216,7 @@ function gitImportOne ()
             commit=`tail -1 "${GIT_PORTATION_COMMITS_FILE}"`
             echo -e "Applying: \033[33m${commit}\033[0m"
 
-            git stash pop --quiet > /dev/null
+            gitCmd stash pop --quiet > /dev/null
             gitImportContinue
         fi
     else
@@ -181,6 +248,9 @@ function gitImportAll ()
 GIT_PORTATION_FOLDER="${BASE_PATH}/cache/gportation/"
 GIT_PORTATION_COMMITS_FILE="${GIT_PORTATION_FOLDER}/commits"
 GIT_PORTATION_CONTINUE_FILE="${GIT_PORTATION_FOLDER}/continue.lock"
+GIT_SAFE_FOLDER="${BASE_PATH}/safe"
+GIT_BEFORE_SAFE_FOLDER="${GIT_SAFE_FOLDER}/before/"
+GIT_AFTER_SAFE_FOLDER="${GIT_SAFE_FOLDER}/after/"
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias git="gitCmd"
@@ -209,7 +279,7 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
         test -d "$rebaseMergeTest" -o -d "$rebaseApplyTest"
         if [ $? -ne 0 ]; then
             branch=`getGitBranch`
-            git push origin "$branch" "$@"
+            gitCmd push origin "$branch" "$@"
         else
             echo -e "\033[31mYou cannot PUSH commits while rebasing\033[0m"
         fi
@@ -224,7 +294,7 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
         test -d "$rebaseMergeTest" -o -d "$rebaseApplyTest"
         if [ $? -ne 0 ]; then
             branch=`getGitBranch`
-            git pull origin "$branch" "$@"
+            gitCmd pull origin "$branch" "$@"
         else
             echo -e "\033[31mYou cannot PULL commits while rebasing\033[0m"
         fi
@@ -233,9 +303,9 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     function gclean ()
     {
         if [ "`askQuestion 'Are you sure you want to clean your environment' 'Y'`" = true ]; then
-            git reset HEAD --quiet
-            git clean -dfq
-            git checkout -- .
+            gitCmd reset HEAD --quiet
+            gitCmd clean -dfq
+            gitCmd checkout -- .
 
             echo -e "\033[32mEnvironment clean\033[0m"
         else
@@ -248,11 +318,11 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
         name=`askMessage 'Tag name:'`
         message=`askMessage 'Tag message:'`
 
-        git tag -a "$name" -m "$message"
+        gitCmd tag -a "$name" -m "$message"
         echo -e "\033[32mTag successfully created\033[0m"
 
         if [ "`askQuestion 'Do you want to push it to the server' 'Y'`" = true ]; then
-            git push origin "$name" --no-verify --quiet
+            gitCmd push origin "$name" --no-verify --quiet
             echo -e "\033[32mTag pushed to server\033[0m"
         fi
     }
