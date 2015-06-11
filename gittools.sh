@@ -1,6 +1,6 @@
 #!/bin/sh
 
-function getMd5 ()
+function getFileChecksum ()
 {
     md5=`md5 $1 2> /dev/null`
     if [ $? -eq 0 ]; then
@@ -17,8 +17,8 @@ function ensureSafeFilesAreTheSame ()
     for file in `find "${folder}" -type f`; do
         projectFile="${file#${folder}}"
 
-        projectFileMd5=`getMd5 $projectFile`
-        safeFileMd5=`getMd5 $file`
+        projectFileMd5=`getFileChecksum $projectFile`
+        safeFileMd5=`getFileChecksum $file`
 
         if [ "$projectFileMd5" = "" ] || [ "$safeFileMd5" = "" ] || [ "$projectFileMd5" != "$safeFileMd5" ]; then
             return 1
