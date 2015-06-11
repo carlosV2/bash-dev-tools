@@ -1,5 +1,10 @@
 #!/bin/sh
 
+function gitCmd ()
+{
+    git "$@"
+}
+
 function getGitBranch ()
 {
     GIT_SYM=`git symbolic-ref HEAD`
@@ -178,6 +183,7 @@ GIT_PORTATION_COMMITS_FILE="${GIT_PORTATION_FOLDER}/commits"
 GIT_PORTATION_CONTINUE_FILE="${GIT_PORTATION_FOLDER}/continue.lock"
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
+    alias git="gitCmd"
     alias gclone="git clone"
     alias gstatus="git status"
     alias gadd="git add"
