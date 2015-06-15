@@ -53,23 +53,40 @@ function runSafeFilesCopyProcess ()
 
 function gitCmd ()
 {
-    runSafeFilesRemoveProcess "${GIT_BEFORE_SAFE_FOLDER}"
-    if [ $? -ne 0 ]; then
-        echo -e "\033[31mSafe files are not in the status they should.\033[0m"
-        return 1
+    inGitDirectory
+    if [ $? -eq 1 ]; then
+        runSafeFilesRemoveProcess "${GIT_BEFORE_SAFE_FOLDER}"
+        if [ $? -ne 0 ]; then
+            echo -e "\033[31mSafe files are not in the status they should. Try running \`gitOverrideSafeFiles\` to fix it.\033[0m"
+
+            return 1
+        fi
+        runSafeFilesCopyProcess "${GIT_AFTER_SAFE_FOLDER}"
     fi
-    runSafeFilesCopyProcess "${GIT_AFTER_SAFE_FOLDER}"
     
     git "$@"
 
-    runSafeFilesRemoveProcess "${GIT_AFTER_SAFE_FOLDER}"
-    if [ $? -ne 0 ]; then
-        echo -e "\033[31mAfter executing GIT the safe files are not in the status they should. Please, review the project status!\033[0m"
-        return 1
+    inGitDirectory
+    if [ $? -eq 1 ]; then
+        runSafeFilesRemoveProcess "${GIT_AFTER_SAFE_FOLDER}"
+        if [ $? -ne 0 ]; then
+            echo -e "\033[31mAfter executing GIT the safe files are not in the status they should. Please, review the project status!\033[0m"
+            return 1
+        fi
+        runSafeFilesCopyProcess "${GIT_BEFORE_SAFE_FOLDER}"
     fi
-    runSafeFilesCopyProcess "${GIT_BEFORE_SAFE_FOLDER}"
 
     return 0
+}
+
+function inGitDirectory ()
+{
+    dir=`command git rev-parse --git-dir 2> /dev/null`
+    if [ "$dir" = "" ]; then
+        return 0
+    else
+        return 1
+    fi
 }
 
 function getGitBranch ()
