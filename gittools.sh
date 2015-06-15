@@ -3,24 +3,28 @@
 function getFileChecksum ()
 {
     sha=`shasum $1 2> /dev/null`
-    if [ $? -eq 0 ]; then
-        prefix=" $1"
-        echo "${sha%$prefix}"
-    else
+    if [ $? -ne 0 ]; then
         echo ""
     fi
+
+    prefix=" $1"
+    echo "${sha%$prefix}"
 }
 
-function getLookUpFolder ()
+function getProjectFolder ()
 {
     gitFolder=`command git rev-parse --git-dir 2> /dev/null`
-    if [ "${gitFolder}" = ".git" ]; then
+    if [ $? -ne 0 ]; then
+        return 1
+    elif [ "${gitFolder}" = ".git" ]; then
         gitFolder=`pwd`
     else
         gitFolder=${gitFolder%.git}
     fi
 
     echo "${gitFolder}"
+
+    return 0
 }
 
 function ensureSafeFilesAreTheSame ()
@@ -300,9 +304,10 @@ function gitImportAll ()
 GIT_PORTATION_FOLDER="${BASE_PATH}/cache/gportation/"
 GIT_PORTATION_COMMITS_FILE="${GIT_PORTATION_FOLDER}/commits"
 GIT_PORTATION_CONTINUE_FILE="${GIT_PORTATION_FOLDER}/continue.lock"
-GIT_SAFE_FOLDER="${BASE_PATH}/safe"
-GIT_BEFORE_SAFE_FOLDER="${GIT_SAFE_FOLDER}/before/"
-GIT_AFTER_SAFE_FOLDER="${GIT_SAFE_FOLDER}/after/"
+GIT_PATCHES_CACHE_FOLDER="${BASE_PATH}/cache/patches/"
+GIT_PATCHES_FOLDER="${BASE_PATH}/patches/"
+GIT_PATCHES_UP_FOLDER="${BASE_PATH}/patches/up/"
+GIT_PATCHES_DOWN_FOLDER="${BASE_PATH}/patches/down/"
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias git="gitCmd"
@@ -448,5 +453,61 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
                 fi
             done
         fi
+    }
+
+    function generatePatchFilesForCurrentProject ()
+    {
+        projectFolder=`getProjectFolder`
+        if [ $? -ne 0 ]; then
+            echo -e "\033[31mSorry, not in a Git project. This method works only for Git projects.\033[0m"
+            return 1
+        fi
+        projectFolder="${projectFolder}/"
+
+        if [ -d "${GIT_PATCHES_UP_FOLDER}${projectFolder}" ] || [ -d "${GIT_PATCHES_DOWN_FOLDER}${projectFolder}" ]; then
+            if [ "`askQuestion 'This will remove previous patches. Do you want to continue' 'N'`" = false ]; then
+                return 1
+            fi
+
+            rm -rf "${GIT_PATCHES_UP_FOLDER}${projectFolder}"
+            rm -rf "${GIT_PATCHES_DOWN_FOLDER}${projectFolder}"
+        fi
+
+        echo -n "Preparing environment... "
+        if [ -d "${GIT_PATCHES_CACHE_FOLDER}" ]; then
+            rm -rf "${GIT_PATCHES_CACHE_FOLDER}"
+        fi
+
+        rsyncExclusions=""
+        if [ -f "${projectFolder}/.bdtignore" ]; then
+            rsyncExclusions=`echo $(cat .bdtignore | sed -e 's/^/--exclude=/')`
+        fi
+        eval "rsync -a ${rsyncExclusions} ${projectFolder} ${GIT_PATCHES_CACHE_FOLDER}"
+
+        echo -e "\033[32mdone\033[0m"
+        echo
+        read -p "Please, modify the project now and press enter when done..." tmp
+
+        echo -n "Checking files... "
+        for file in `find "${GIT_PATCHES_CACHE_FOLDER}" -type f`; do
+            projectFile="${projectFolder}${file#${GIT_PATCHES_CACHE_FOLDER}}"
+
+            fileChecksum=`getFileChecksum "$projectFile"`
+            cachedFileChecksum=`getFileChecksum "$file"`
+
+            if [ "$fileChecksum" != "$cachedFileChecksum" ]; then
+                basePath=$(dirname "$projectFile")
+                mkdir -p "${GIT_PATCHES_UP_FOLDER}${basePath}"
+                mkdir -p "${GIT_PATCHES_DOWN_FOLDER}${basePath}"
+
+                diff "$file" "$projectFile" > "${GIT_PATCHES_UP_FOLDER}${projectFile}"
+                diff "$projectFile" "$file" > "${GIT_PATCHES_DOWN_FOLDER}${projectFile}"
+            fi
+        done
+
+        echo -e "\033[32mdone\033[0m"
+
+        echo
+        echo "Patches created. Have fun developing!"
     }
 fi
