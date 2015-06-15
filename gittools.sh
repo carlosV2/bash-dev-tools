@@ -27,75 +27,28 @@ function getProjectFolder ()
     return 0
 }
 
-function ensureSafeFilesAreTheSame ()
+function runFilePatchesProcess ()
 {
-    folder="$1"
-    projectFolder=`getLookUpFolder`
+    projectFolder=`getProjectFolder`
+    if [ $? -eq 0 ]; then
+        patchesFolder="$1"
+        if [ -d "${patchesFolder}" ] && [ -d "${patchesFolder}${projectFolder}" ]; then
+            for file in `find "${patchesFolder}${projectFolder}" -type f`; do
+                projectFile="${file#${patchesFolder}}"
 
-    if [ -d "${folder}${projectFolder}" ]; then
-        for file in `find "${folder}${projectFolder}" -type f`; do
-            projectFile="${file#${folder}}"
+                patch -sN --dry-run "${projectFile}" < "${file}" > /dev/null 2>&1
+                if [ $? -ne 0 ]; then
+                    echo -e "\033[31mFile \`${file#${patchesFolder}}\` could not be patched. Please, review it.\033[0m"
 
-            projectFileMd5=`getFileChecksum $projectFile`
-            safeFileMd5=`getFileChecksum $file`
+                    return 1
+                fi
+            done
 
-            if [ "$projectFileMd5" = "" ] || [ "$safeFileMd5" = "" ] || [ "$projectFileMd5" != "$safeFileMd5" ]; then
-                return 1
-            fi
-        done
-    fi
+            for file in `find "${patchesFolder}${projectFolder}" -type f`; do
+                projectFile="${file#${patchesFolder}}"
 
-    return 0
-}
-
-function runSafeFilesRemoveProcess ()
-{
-    folder="$1"
-    projectFolder=`getLookUpFolder`
-    ensureSafeFilesAreTheSame "${folder}"
-    if [ $? -ne 0 ]; then
-        return 1
-    fi
-
-    if [ -d "${folder}${projectFolder}" ]; then
-        for file in `find "${folder}${projectFolder}" -type f`; do
-            rm "${file#${folder}}"
-        done
-    fi
-
-    return 0
-}
-
-function runSafeFilesCopyProcess ()
-{
-    folder="$1"
-    projectFolder=`getLookUpFolder`
-
-    if [ -d "${folder}${projectFolder}" ]; then
-        for file in `find "${folder}${projectFolder}" -type f`; do
-            cp "$file" "${file#${folder}}"
-        done
-    fi
-
-    return 0
-}
-
-function runSafeFilesProcess ()
-{
-    beforeFolder="$1"
-    afterFolder="$2"
-    if [ -d "${beforeFolder}" ] && [ -d "${afterFolder}" ]; then
-        inGitDirectory
-        if [ $? -eq 1 ]; then
-            runSafeFilesRemoveProcess "${beforeFolder}"
-            if [ $? -ne 0 ]; then
-                echo -e "\033[31mSafe files are not in the status they should. Try running \`gitOverrideSafeFiles\` to fix it.\033[0m"
-
-                return 1
-            fi
-
-            runSafeFilesCopyProcess "${afterFolder}"
-            return $?
+                patch -sN "${projectFile}" < "${file}" 2> /dev/null
+            done
         fi
     fi
 
@@ -104,28 +57,18 @@ function runSafeFilesProcess ()
 
 function gitCmd ()
 {
-    runSafeFilesProcess "${GIT_BEFORE_SAFE_FOLDER}" "${GIT_AFTER_SAFE_FOLDER}"
+    runFilePatchesProcess "${GIT_PATCHES_DOWN_FOLDER}"
 
     if [ $? -eq 0 ]; then
         git "$@"
         result=$?
 
-        runSafeFilesProcess "${GIT_AFTER_SAFE_FOLDER}" "${GIT_BEFORE_SAFE_FOLDER}"
+        runFilePatchesProcess "${GIT_PATCHES_UP_FOLDER}"
 
         return $result
     fi
 
     return 256
-}
-
-function inGitDirectory ()
-{
-    dir=`command git rev-parse --git-dir 2> /dev/null`
-    if [ "$dir" = "" ]; then
-        return 0
-    else
-        return 1
-    fi
 }
 
 function getGitBranch ()
@@ -420,39 +363,6 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
                 echo -e "\033[31mPlease, select operation. Either \`one\`, \`continue\` or \`all\`.\033[0m"
                 ;;
         esac
-    }
-
-    function gitOverrideSafeFiles ()
-    {
-        if [ "`askQuestion 'Are you sure you want to override the safe files' 'N'`" = true ]; then
-            runSafeFilesCopyProcess "${GIT_BEFORE_SAFE_FOLDER}"
-            echo -e "\033[32mFiles overridden\033[0m"
-        else
-            echo -e "\033[31mAborted...\033[0m"
-        fi
-    }
-
-    function getChangedSafeFiles ()
-    {
-        folder="${GIT_BEFORE_SAFE_FOLDER}"
-        projectFolder=`getLookUpFolder`
-
-        if [ -d "${folder}${projectFolder}" ]; then
-            for file in `find "${folder}${projectFolder}" -type f`; do
-                projectFile="${file#${folder}}"
-
-                projectFileMd5=`getFileChecksum $projectFile`
-                safeFileMd5=`getFileChecksum $file`
-
-                if [ "$projectFileMd5" = "" ] || [ "$safeFileMd5" = "" ] || [ "$projectFileMd5" != "$safeFileMd5" ]; then
-                    echo -e "${projectFile}: \033[33mdirty\033[0m"
-
-                    diff "$projectFile" "$file"
-                else
-                    echo -e "${projectFile}: \033[32mclean\033[0m"
-                fi
-            done
-        fi
     }
 
     function generatePatchFilesForCurrentProject ()
