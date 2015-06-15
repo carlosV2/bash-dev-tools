@@ -49,34 +49,46 @@ function runSafeFilesCopyProcess ()
     for file in `find "${folder}" -type f`; do
         cp "$file" "${file#${folder}}"
     done
+
+    return 0
+}
+
+function runSafeFilesProcess ()
+{
+    beforeFolder="$1"
+    afterFolder="$2"
+    if [ -d "${beforeFolder}" ] && [ -d "${afterFolder}" ]; then
+        inGitDirectory
+        if [ $? -eq 1 ]; then
+            runSafeFilesRemoveProcess "${beforeFolder}"
+            if [ $? -ne 0 ]; then
+                echo -e "\033[31mSafe files are not in the status they should. Try running \`gitOverrideSafeFiles\` to fix it.\033[0m"
+
+                return 1
+            fi
+
+            runSafeFilesCopyProcess "${afterFolder}"
+            return $?
+        fi
+    fi
+
+    return 0
 }
 
 function gitCmd ()
 {
-    inGitDirectory
-    if [ $? -eq 1 ]; then
-        runSafeFilesRemoveProcess "${GIT_BEFORE_SAFE_FOLDER}"
-        if [ $? -ne 0 ]; then
-            echo -e "\033[31mSafe files are not in the status they should. Try running \`gitOverrideSafeFiles\` to fix it.\033[0m"
+    runSafeFilesProcess "${GIT_BEFORE_SAFE_FOLDER}" "${GIT_AFTER_SAFE_FOLDER}"
 
-            return 1
-        fi
-        runSafeFilesCopyProcess "${GIT_AFTER_SAFE_FOLDER}"
-    fi
-    
-    git "$@"
+    if [ $? -eq 0 ]; then
+        git "$@"
+        result=$?
 
-    inGitDirectory
-    if [ $? -eq 1 ]; then
-        runSafeFilesRemoveProcess "${GIT_AFTER_SAFE_FOLDER}"
-        if [ $? -ne 0 ]; then
-            echo -e "\033[31mAfter executing GIT the safe files are not in the status they should. Please, review the project status!\033[0m"
-            return 1
-        fi
-        runSafeFilesCopyProcess "${GIT_BEFORE_SAFE_FOLDER}"
+        runSafeFilesProcess "${GIT_AFTER_SAFE_FOLDER}" "${GIT_BEFORE_SAFE_FOLDER}"
+
+        return $result
     fi
 
-    return 0
+    return 256
 }
 
 function inGitDirectory ()
