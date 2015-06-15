@@ -11,19 +11,35 @@ function getFileChecksum ()
     fi
 }
 
+function getLookUpFolder ()
+{
+    gitFolder=`command git rev-parse --git-dir 2> /dev/null`
+    if [ "${gitFolder}" = ".git" ]; then
+        gitFolder=`pwd`
+    else
+        gitFolder=${gitFolder%.git}
+    fi
+
+    echo "${gitFolder}"
+}
+
 function ensureSafeFilesAreTheSame ()
 {
     folder="$1"
-    for file in `find "${folder}" -type f`; do
-        projectFile="${file#${folder}}"
+    projectFolder=`getLookUpFolder`
 
-        projectFileMd5=`getFileChecksum $projectFile`
-        safeFileMd5=`getFileChecksum $file`
+    if [ -d "${folder}${projectFolder}" ]; then
+        for file in `find "${folder}${projectFolder}" -type f`; do
+            projectFile="${file#${folder}}"
 
-        if [ "$projectFileMd5" = "" ] || [ "$safeFileMd5" = "" ] || [ "$projectFileMd5" != "$safeFileMd5" ]; then
-            return 1
-        fi
-    done
+            projectFileMd5=`getFileChecksum $projectFile`
+            safeFileMd5=`getFileChecksum $file`
+
+            if [ "$projectFileMd5" = "" ] || [ "$safeFileMd5" = "" ] || [ "$projectFileMd5" != "$safeFileMd5" ]; then
+                return 1
+            fi
+        done
+    fi
 
     return 0
 }
@@ -31,14 +47,17 @@ function ensureSafeFilesAreTheSame ()
 function runSafeFilesRemoveProcess ()
 {
     folder="$1"
+    projectFolder=`getLookUpFolder`
     ensureSafeFilesAreTheSame "${folder}"
     if [ $? -ne 0 ]; then
         return 1
     fi
 
-    for file in `find "${folder}" -type f`; do
-        rm "${file#${folder}}"
-    done
+    if [ -d "${folder}${projectFolder}" ]; then
+        for file in `find "${folder}${projectFolder}" -type f`; do
+            rm "${file#${folder}}"
+        done
+    fi
 
     return 0
 }
@@ -46,9 +65,13 @@ function runSafeFilesRemoveProcess ()
 function runSafeFilesCopyProcess ()
 {
     folder="$1"
-    for file in `find "${folder}" -type f`; do
-        cp "$file" "${file#${folder}}"
-    done
+    projectFolder=`getLookUpFolder`
+
+    if [ -d "${folder}${projectFolder}" ]; then
+        for file in `find "${folder}${projectFolder}" -type f`; do
+            cp "$file" "${file#${folder}}"
+        done
+    fi
 
     return 0
 }
