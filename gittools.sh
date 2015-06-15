@@ -426,4 +426,27 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
             echo -e "\033[31mAborted...\033[0m"
         fi
     }
+
+    function getChangedSafeFiles ()
+    {
+        folder="${GIT_BEFORE_SAFE_FOLDER}"
+        projectFolder=`getLookUpFolder`
+
+        if [ -d "${folder}${projectFolder}" ]; then
+            for file in `find "${folder}${projectFolder}" -type f`; do
+                projectFile="${file#${folder}}"
+
+                projectFileMd5=`getFileChecksum $projectFile`
+                safeFileMd5=`getFileChecksum $file`
+
+                if [ "$projectFileMd5" = "" ] || [ "$safeFileMd5" = "" ] || [ "$projectFileMd5" != "$safeFileMd5" ]; then
+                    echo -e "${projectFile}: \033[33mdirty\033[0m"
+
+                    diff "$projectFile" "$file"
+                else
+                    echo -e "${projectFile}: \033[32mclean\033[0m"
+                fi
+            done
+        fi
+    }
 fi
