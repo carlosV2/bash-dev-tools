@@ -89,6 +89,14 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
 
     function rmwip ()
     {
-        recursivelyRemoveWipTags "features"
+        if [ $# -eq 1 ]; then
+            if [ -f "$1" ]; then
+                removeWipTagsFromFile "$1"
+            else
+                echo -e "\033[31mFile \`$1\` does not exists or could not be opened.\033[0m"
+            fi
+        else
+            recursivelyRemoveWipTags "features"
+        fi
     }
 fi
