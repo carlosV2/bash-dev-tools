@@ -421,4 +421,29 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
         echo
         echo "Patches created. Have fun developing!"
     }
+
+    function applyProjectPatches ()
+    {
+        getProjectFolder > /dev/null
+        if [ $? -ne 0 ]; then
+            echo -e "\033[31mSorry, not in a Git project. This method works only for Git projects.\033[0m"
+            return 1
+        fi
+
+        case "$1" in
+            up)
+                if [ "`askQuestion 'Are you sure you want to apply the UP patches' 'Y'`" = true ]; then
+                    runFilePatchesProcess "${GIT_PATCHES_UP_FOLDER}"
+                fi
+                ;;
+            down)
+                if [ "`askQuestion 'Are you sure you want to apply the DOWN patches' 'Y'`" = true ]; then
+                    runFilePatchesProcess "${GIT_PATCHES_DOWN_FOLDER}"
+                fi
+                ;;
+            *)
+                echo -e "\033[31mPlease, specify the patches you want to apply:\n\nUsage: applyProjectPatches [up|down].\033[0m"
+                ;;
+        esac
+    }
 fi
