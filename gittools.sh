@@ -36,9 +36,9 @@ function runFilePatchesProcess ()
             for file in `find "${patchesFolder}${projectFolder}" -type f`; do
                 projectFile="${file#${patchesFolder}}"
 
-                patch -sN --dry-run "${projectFile}" < "${file}" > /dev/null 2>&1
+                result=`patch -sN --dry-run "${projectFile}" < "${file}" >&1`
                 if [ $? -ne 0 ]; then
-                    echo -e "\033[31mFile \`${file#${patchesFolder}}\` could not be patched. Please, review it.\033[0m"
+                    echo -e "\033[31mFile \`${file#${patchesFolder}}\` could not be patched. Please, review it. Error: $result\033[0m"
 
                     return 1
                 fi
@@ -254,6 +254,7 @@ GIT_PATCHES_DOWN_FOLDER="${BASE_PATH}/patches/down/"
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias git="gitCmd"
+    alias ogit="command git"
     alias gclone="git clone"
     alias gstatus="git status"
     alias gadd="git add"
