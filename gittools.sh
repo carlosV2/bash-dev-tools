@@ -391,7 +391,7 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
 
         rsyncExclusions=""
         if [ -f "${projectFolder}/.bdtignore" ]; then
-            rsyncExclusions=`echo $(cat .bdtignore | sed -e 's/^/--exclude=/')`
+            rsyncExclusions=`echo $(cat .bdtignore | sed -e 's/^[^!]/--exclude=\//' | sed -e 's/^!/--include=/')`
         fi
         eval "rsync -a ${rsyncExclusions} ${projectFolder} ${GIT_PATCHES_CACHE_FOLDER}"
 
