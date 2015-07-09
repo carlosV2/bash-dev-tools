@@ -67,21 +67,46 @@ function recursivelyRemoveWipTags ()
     done
 }
 
+function generateNewRandomTmpDir ()
+{
+    seed=`php -r 'echo microtime(true) * 10000;'`
+    generateNewTmpDirFromSeed "$seed"
+}
+
+function generateNewTmpDirFromSeed ()
+{
+    seed="$1"
+    folder=`echo -n "$seed" | md5`
+
+    mkdir "${TMPDIR}${folder}" 2> /dev/null
+    echo "${TMPDIR}${folder}"
+}
+
+function executeBehat ()
+{
+    oldTmpDir="$TMPDIR"
+    TMPDIR=`generateNewRandomTmpDir`
+
+    bin/behat "$@"
+
+    TMPDIR="${oldTmpDir}"
+}
+
 FORMATTING_TOOLS+=('fixFormattingOnBehatFiles')
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     function bh()
     {
         if [ $# -eq 0 ]; then
-            bin/behat -fprogress
+            executeBehat -fprogress
         elif [ $# -eq 1 ]; then
             if [ -d "$1" ]; then
-                bin/behat -fprogress "$@"
+                executeBehat -fprogress "$1"
             else
-                bin/behat -fpretty "$@"
+                executeBehat -fpretty "$@"
             fi
         else
-            bin/behat -fpretty "$@"
+            executeBehat -fpretty "$@"
         fi
     }
 
@@ -92,6 +117,8 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
         if [ $# -eq 1 ]; then
             if [ -f "$1" ]; then
                 removeWipTagsFromFile "$1"
+            elif [ -d "$1" ]; then
+                recursivelyRemoveWipTags "$1"
             else
                 echo -e "\033[31mFile \`$1\` does not exists or could not be opened.\033[0m"
             fi
