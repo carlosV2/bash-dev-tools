@@ -93,6 +93,9 @@ function executeBehat ()
 }
 
 FORMATTING_TOOLS+=('fixFormattingOnBehatFiles')
+CLEAN_BEHAT_CACHE_FOLDER="${BASE_PATH}/cache/cleanbh/"
+CLEAN_BEHAT_CACHE_FILES_FOLDER="${BASE_PATH}/cache/cleanbh/files/"
+CLEAN_BEHAT_EXTRA_FOLDER="${BASE_PATH}/extra/cleanbh/"
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     function bh()
@@ -124,6 +127,48 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
             fi
         else
             recursivelyRemoveWipTags "features"
+        fi
+    }
+
+    function cleanbh ()
+    {
+        runFilePatchesProcess "${GIT_PATCHES_DOWN_FOLDER}"
+
+        echo -ne "Environment... \033[36mpreparing\033[0m"\\r
+        if [ -d "${CLEAN_BEHAT_CACHE_FOLDER}" ]; then
+            rm -rf "${CLEAN_BEHAT_CACHE_FOLDER}"
+        fi
+        mkdir -p "${CLEAN_BEHAT_CACHE_FOLDER}"
+        echo -e "Environment... \033[32mready    \033[0m"
+
+        echo -ne "Files... \033[36mpatching\033[0m"\\r
+        for file in `find "features" -type f -name "*.php"`; do
+            basePath=$(dirname "$file")
+
+            mkdir -p "${CLEAN_BEHAT_CACHE_FILES_FOLDER}${basePath}"
+            cp "$file" "${CLEAN_BEHAT_CACHE_FILES_FOLDER}${file}"
+
+            php "${CLEAN_BEHAT_EXTRA_FOLDER}patch.php" "$file" "${CLEAN_BEHAT_EXTRA_FOLDER}inject.php" "${CLEAN_BEHAT_CACHE_FOLDER}logging.txt"
+        done
+        echo -e "Files... \033[32mpatched \033[0m"
+
+        bh "$@"
+
+        echo -ne "Files... \033[36mrestoring\033[0m"\\r
+        for file in `find "features" -type f -name "*.php"`; do
+            cp "${CLEAN_BEHAT_CACHE_FILES_FOLDER}${file}" "$file"
+        done
+        echo -e "Files... \033[32mrestored \033[0m"
+
+        runFilePatchesProcess "${GIT_PATCHES_UP_FOLDER}"
+
+        duplicatedSteps=`bh --no-colors -dl | cut -d"|" -f2 | sed -e 's/^ *//' -e '/^$/d' | grep -v -x -f "${CLEAN_BEHAT_CACHE_FOLDER}logging.txt"`
+        if [ "$duplicatedSteps" == "" ]; then
+            echo -e "\033[32mThere are no unused steps!\033[0m"
+        else
+            echo -e "\033[36mThese were the unused steps:\033[0m"
+            echo
+            echo "$duplicatedSteps"
         fi
     }
 fi
