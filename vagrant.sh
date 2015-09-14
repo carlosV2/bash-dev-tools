@@ -2,6 +2,11 @@
 
 function executeCommandInVagrant ()
 {
+    running=`vagrant status | grep running`
+    if [ "$running" == "" ]; then
+        vagrant up
+    fi
+
     vagrant ssh -c "$*"
 }
 
