@@ -179,7 +179,13 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
 
         for arg in "$@"
         do
-            steps=`echo "$steps" | grep "$arg"`
+            param=""
+            if [ "${arg:0:1}" == "-" ]; then
+                arg="${arg:1}"
+                param="-v"
+            fi
+
+            steps=`echo "$steps" | grep $param "$arg"`
         done
 
         if [ "$steps" == "" ]; then
