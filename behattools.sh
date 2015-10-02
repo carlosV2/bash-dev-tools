@@ -175,11 +175,21 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     function bhsearch ()
     {
         steps=`bh -dl`
+        total=`echo $(echo "$steps" | wc -l)`
+
         for arg in "$@"
         do
             steps=`echo "$steps" | grep "$arg"`
         done
 
-        echo "$steps"
+        if [ "$steps" == "" ]; then
+            matches=0
+        else
+            echo "$steps"
+            matches=`echo $(echo "$steps" | wc -l)`
+            echo
+        fi
+
+        echo -e "Found \033[32m$matches\033[0m of \033[32m$total\033[0m total"
     }
 fi
