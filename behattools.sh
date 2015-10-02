@@ -171,4 +171,15 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
             echo "$duplicatedSteps"
         fi
     }
+
+    function bhsearch ()
+    {
+        steps=`bh -dl`
+        for arg in "$@"
+        do
+            steps=`echo "$steps" | grep "$arg"`
+        done
+
+        echo "$steps"
+    }
 fi
