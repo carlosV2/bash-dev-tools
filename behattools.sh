@@ -174,7 +174,7 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
 
     function bhsearch ()
     {
-        steps=`bh -dl`
+        steps=`bh -dl | cut -d'|' -f2 | sort | uniq`
         total=`echo $(echo "$steps" | wc -l)`
 
         for arg in "$@"
@@ -185,7 +185,7 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
                 param="-v"
             fi
 
-            steps=`echo "$steps" | grep $param "$arg"`
+            steps=`echo "$steps" | grep $param -i "$arg"`
         done
 
         if [ "$steps" == "" ]; then
