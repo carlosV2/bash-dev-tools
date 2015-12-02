@@ -270,6 +270,7 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     alias greset="git reset"
     alias grm="git rm"
     alias gmv="git mv"
+    alias gremote="git remote"
 
     function gpush ()
     {
