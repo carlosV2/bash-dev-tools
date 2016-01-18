@@ -96,7 +96,6 @@ FORMATTING_TOOLS+=('fixFormattingOnBehatFiles')
 CLEAN_BEHAT_CACHE_FOLDER="${BASE_PATH}/cache/cleanbh/"
 CLEAN_BEHAT_CACHE_FILES_FOLDER="${BASE_PATH}/cache/cleanbh/files/"
 CLEAN_BEHAT_EXTRA_FOLDER="${BASE_PATH}/extra/cleanbh/"
-DETACHED_BEHAT_CACHE_FOLDER="${BASE_PATH}/cache/dbh/"
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     function bh()
@@ -198,31 +197,5 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
         fi
 
         echo -e "Found \033[32m$matches\033[0m of \033[32m$total\033[0m total"
-    }
-
-    function dbh ()
-    {
-        currentDir=`pwd`
-        projectFolder=`getProjectFolder`
-        if [ $? -ne 0 ]; then
-            echo -e "\033[31mSorry, not in a Git project. This method works only for Git projects.\033[0m"
-            return 1
-        fi
-        projectFolder="${projectFolder}/"
-
-        echo -ne "\033[36mDetaching...\033[0m"\\r
-        copyFolder=`php -r 'echo microtime(true) * 10000;'`
-        mkdir -p "${DETACHED_BEHAT_CACHE_FOLDER}${copyFolder}"
-        eval "rsync -a --exclude=/.git/ ${projectFolder} ${DETACHED_BEHAT_CACHE_FOLDER}${copyFolder}"
-        echo -e "\033[32mDetached!   \033[0m"\\r
-
-        cd "${DETACHED_BEHAT_CACHE_FOLDER}${copyFolder}"
-        bh "$@"
-
-        echo -ne "\033[36mCleaning...\033[0m"\\r
-        rm -rf "${DETACHED_BEHAT_CACHE_FOLDER}${copyFolder}"
-        echo -e "\033[32mClean!     \033[0m"\\r
-
-        cd "${currentDir}"
     }
 fi

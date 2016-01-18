@@ -43,6 +43,7 @@ BEHAT_TOOLS="${BASE_PATH}behattools.sh"
 PHPSPEC_TOOLS="${BASE_PATH}phpspectools.sh"
 VAGRANT_TOOLS="${BASE_PATH}vagrant.sh"
 FORMATTING_TOOLS=()
+DETACHED_RUNNER="${BASE_PATH}/cache/detach/"
 
 if [ -n "$ENABLE_GIT" ] && [ "$ENABLE_GIT" = true ]; then
     source "${GIT_TOOLS}"
@@ -89,3 +90,23 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
         fi
     }
 fi
+
+function detach ()
+{
+    currentDir=`pwd`
+    projectFolder=`getProjectFolder`
+    if [ $? -ne 0 ]; then
+        echo -e "\033[31mSorry, not in a Git project. This method works only for Git projects.\033[0m"
+        return 1
+    fi
+    projectFolder="${projectFolder}/"
+
+    echo -ne "\033[36mDetaching...\033[0m"\\r
+    mkdir -p "${DETACHED_RUNNER}${projectFolder}"
+    eval "rsync -a --exclude=/.git/ ${projectFolder} ${DETACHED_RUNNER}${projectFolder}"
+    echo -e "\033[32mDetached!   \033[0m"\\r
+
+    cd "${DETACHED_RUNNER}${projectFolder}"
+    eval "$@"
+    cd "${currentDir}"
+}
