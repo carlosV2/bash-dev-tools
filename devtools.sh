@@ -103,7 +103,7 @@ function detach ()
 
     echo -ne "\033[36mDetaching...\033[0m"\\r
     mkdir -p "${DETACHED_RUNNER}${projectFolder}"
-    eval "rsync -a --exclude=/.git/ ${projectFolder} ${DETACHED_RUNNER}${projectFolder}"
+    eval "rsync -a --delete --exclude=/.git/ ${projectFolder} ${DETACHED_RUNNER}${projectFolder}"
     echo -e "\033[32mDetached!   \033[0m"\\r
 
     cd "${DETACHED_RUNNER}${projectFolder}"
