@@ -3,7 +3,7 @@
 function fixFormattingOnPhpSpecFiles ()
 {
     echo -ne "Fixing SPEC files... \033[36mcleaning\033[0m"\\r
-    bin/php-cs-fixer fix --fixers=-visibility spec --quiet
+    bin/php-cs-fixer fix --fixers=-visibility_required spec --quiet
     if [ $? -eq 0 ]; then
         echo -e "Fixing SPEC files... \033[32mclean   \033[0m"
         return 0
