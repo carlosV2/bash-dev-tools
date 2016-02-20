@@ -162,7 +162,7 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
 
         runFilePatchesProcess "${GIT_PATCHES_UP_FOLDER}"
 
-        duplicatedSteps=`bh --no-colors -dl | cut -d"|" -f2 | sed -e 's/^ *//' -e '/^$/d' | grep -v -x -f "${CLEAN_BEHAT_CACHE_FOLDER}logging.txt"`
+        duplicatedSteps=`bh --no-colors -dl | cut -d"|" -f2 | sed -e 's/^ *//' -e '/^$/d' | grep -v -f "${CLEAN_BEHAT_CACHE_FOLDER}logging.txt" | uniq | sort`
         if [ "$duplicatedSteps" == "" ]; then
             echo -e "\033[32mThere are no unused steps!\033[0m"
         else
