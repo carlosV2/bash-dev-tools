@@ -13,7 +13,7 @@ function addSnippetsIntoContext ()
     sed 's/^\(class .*\)$/use Behat\\Behat\\Context\\SnippetAcceptingContext;\'$'\n\\1,SnippetAcceptingContext/' "$2" > TemporalContext.php
     cat TemporalContext.php > "$2"
 
-    bin/behat "$1" --append-snippets
+    behatBinary "$1" --append-snippets
 
     sed '/use Behat\\Behat\\Context\\SnippetAcceptingContext;/d' "$2" > TemporalContext.php
     cat TemporalContext.php > "$2"
@@ -82,12 +82,20 @@ function generateNewTmpDirFromSeed ()
     echo "${TMPDIR}${folder}"
 }
 
-function executeBehat ()
+function behatBinary ()
 {
     oldTmpDir="$TMPDIR"
     TMPDIR=`generateNewRandomTmpDir`
 
-    bin/behat "$@"
+    if [ -e bin/behat ]; then
+        bin/behat "$@"
+    elif [ -e vendor/bin/behat ]; then
+        vendor/bin/behat "$@"
+    elif [ -e vendor/behat/behat/bin/behat ]; then
+        vendor/behat/behat/bin/behat "$@"
+    else
+        echo -e "\033[31mBehat binary not found!\033[0m"
+    fi
 
     TMPDIR="${oldTmpDir}"
 }
@@ -101,15 +109,15 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     function bh()
     {
         if [ $# -eq 0 ]; then
-            executeBehat -fprogress
+            behatBinary -fprogress
         elif [ $# -eq 1 ]; then
             if [ -d "$1" ]; then
-                executeBehat -fprogress "$1"
+                behatBinary -fprogress "$1"
             else
-                executeBehat -fpretty "$@"
+                behatBinary -fpretty "$@"
             fi
         else
-            executeBehat -fpretty "$@"
+            behatBinary -fpretty "$@"
         fi
     }
 
