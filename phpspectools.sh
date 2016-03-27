@@ -33,16 +33,29 @@ function getLastEditedSpecFile ()
     fi
 }
 
+function phpspecBinary ()
+{
+    if [ -e bin/phpspec ]; then
+        bin/phpspec "$@"
+    elif [ -e vendor/bin/phpspec ]; then
+        vendor/bin/phpspec "$@"
+    elif [ -e vendor/phpspec/phpspec/bin/phpspec ]; then
+        vendor/phpspec/phpspec/bin/phpspec "$@"
+    else
+        echo -e "\033[31mPhpSpec binary not found!\033[0m"
+    fi
+}
+
 FORMATTING_TOOLS+=('fixFormattingOnPhpSpecFiles')
 
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
-    alias psr="bin/phpspec run"
+    alias psr="phpspecBinary run"
 
     function psl ()
     {
         lastEdited=$(getLastEditedSpecFile)
         echo -e "Running phpspec for: \033[36m${lastEdited}\033[0m"
-        bin/phpspec run "${lastEdited}"
+        phpspecBinary run "${lastEdited}"
     }
 
     function psd ()
@@ -58,6 +71,6 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
             fi
         fi
 
-        bin/phpspec desc "$file"
+        phpspecBinary desc "$file"
     }
 fi
