@@ -3,7 +3,7 @@
 function fixFormattingOnSrcFiles ()
 {
     echo -ne "Fixing SRC files... \033[36mcleaning\033[0m"\\r
-    bin/php-cs-fixer fix src --quiet
+    phpcsfixerBinary fix src --quiet
     if [ $? -eq 0 ]; then
         echo -e "Fixing SRC files... \033[32mclean   \033[0m"
         return 0

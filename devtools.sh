@@ -33,6 +33,19 @@ function askMessage ()
     echo "$message"
 }
 
+function phpcsfixerBinary ()
+{
+    if [ -e bin/php-cs-fixer ]; then
+        bin/php-cs-fixer "$@"
+    elif [ -e vendor/bin/php-cs-fixer ]; then
+        vendor/bin/php-cs-fixer "$@"
+    elif [ -e vendor/fabpot/php-cs-fixer/php-cs-fixer ]; then
+        vendor/fabpot/php-cs-fixer/php-cs-fixer "$@"
+    else
+        echo -e "\033[31mphp-cs-fixer binary not found!\033[0m"
+    fi
+}
+
 if [ -z "$BASE_PATH" ]; then
     BASE_PATH="~/.bash-dev-tools/"
 fi
@@ -68,23 +81,21 @@ fi
 if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
     function ff ()
     {
-        if [ -f "bin/php-cs-fixer" ]; then
-            changes=0
-            for tool in ${FORMATTING_TOOLS[@]}; do
-                $tool
-                changed=$?
-                changes=$((changes + changed))
-            done
+        changes=0
+        for tool in ${FORMATTING_TOOLS[@]}; do
+            $tool
+            changed=$?
+            changes=$((changes + changed))
+        done
 
-            if [ $changes -gt 0 ] && [ "$ENABLE_GIT" = true ]; then
-                if [ "`askQuestion 'Do you want to commit changes' 'Y'`" = "true" ]; then
-                    gitCreateCommit "Fix formatting"
-                    echo -e "\033[32mCommit created\033[0m"
+        if [ $changes -gt 0 ] && [ "$ENABLE_GIT" = true ]; then
+            if [ "`askQuestion 'Do you want to commit changes' 'Y'`" = "true" ]; then
+                gitCreateCommit "Fix formatting"
+                echo -e "\033[32mCommit created\033[0m"
 
-                    if [ "`askQuestion 'Do you want to push changes' 'Y'`" = "true" ]; then
-                        gitPushChanges
-                        echo -e "\033[32mCommit pushed to code repository\033[0m"
-                    fi
+                if [ "`askQuestion 'Do you want to push changes' 'Y'`" = "true" ]; then
+                    gitPushChanges
+                    echo -e "\033[32mCommit pushed to code repository\033[0m"
                 fi
             fi
         fi
