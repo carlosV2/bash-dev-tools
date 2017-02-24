@@ -31,8 +31,6 @@ if [ -n "$ENABLE_ALIAS" ] && [ "$ENABLE_ALIAS" = true ]; then
             fi
         fi
 
-        #php composer.phar self-update > /dev/null 2>&1
-
         php composer.phar "$@"
 
         return $?
